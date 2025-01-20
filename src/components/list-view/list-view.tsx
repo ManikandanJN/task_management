@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { DndContext, DragEndEvent } from "@dnd-kit/core";
+import { DndContext } from "@dnd-kit/core";
 import { useDispatch, useSelector } from "react-redux";
 import { getColor } from "../../utils/helpers";
 import { Task, Column as ColumnType } from "../../types/task";
