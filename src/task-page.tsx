@@ -1,12 +1,13 @@
 import React, { useState, useCallback } from "react";
-import Header from "./components/header";
+import Header from "./components/header/header";
 import BoardView from "./components/board-view/board-view";
 import ListViewComp from "./components/list-view/list-view";
 import Footer from "./components/footer";
 
-function TaskPage() {
+const TaskPage: React.FC = () => {
   const [tabSelected, setTabSelected] = useState<number>(1);
   const [animate, setAnimate] = useState<boolean>(false);
+  const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([]);
 
   const handleTabChange = useCallback((selectedTab: number) => {
     setAnimate(true);
@@ -21,14 +22,22 @@ function TaskPage() {
           className={`${animate ? "animate-slideLeft" : ""}`}
           onAnimationEnd={() => setAnimate(false)}
         >
-          <ListViewComp />
+          <ListViewComp
+            selectedTaskIds={selectedTaskIds}
+            setSelectedTaskIds={setSelectedTaskIds}
+          />
         </div>
       ) : (
         <BoardView animate={animate} setAnimate={setAnimate} />
       )}
-      {false && <Footer />}
+      {selectedTaskIds?.length > 0 && (
+        <Footer
+          selectedTaskIds={selectedTaskIds}
+          setSelectedTaskIds={setSelectedTaskIds}
+        />
+      )}
     </div>
   );
-}
+};
 
 export default TaskPage;

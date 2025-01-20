@@ -106,6 +106,10 @@ const TaskCreation: React.FC<TaskCreationProps> = ({
     }));
   };
 
+  const isFormValid = Object.values(formValues).every(
+    (value) => typeof value === "string" && value.trim() !== ""
+  );
+
   return (
     <>
       <div className="flex flex-col gap-3 p-6">
@@ -142,7 +146,7 @@ const TaskCreation: React.FC<TaskCreationProps> = ({
         </div>
 
         {/* Task Category */}
-        <div className="flex justify-between flex-wrap">
+        <div className="flex justify-between flex-wrap mt-6">
           <div className="py-1 sm:py-4">
             <Label title="Task Category*" />
             <div className="flex gap-5">
@@ -219,6 +223,7 @@ const TaskCreation: React.FC<TaskCreationProps> = ({
           }}
         />
         <Button
+          disabled={!isFormValid}
           children={primaryText}
           type="primary"
           onClick={() => onSave(formValues)}

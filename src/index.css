@@ -21,3 +21,14 @@ code {
 .app-vertical-scrollbar::-webkit-scrollbar {
   display: none;
 }
+
+.checkbox:checked::before {
+  content: "✔"; /* Unicode for checkmark */
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white; /* Tick color */
+  font-size: 12px; /* Adjust size */
+  font-weight: bold;
+}

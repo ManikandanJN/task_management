@@ -2,16 +2,19 @@ import React, { useEffect } from "react";
 import { DownArrow } from "../icons";
 import DropDown from "./common/drop-down";
 import { DropDownMenuItem } from "../types/task";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { fetchTasks, setFilter } from "../store/task-slice";
-import { AppDispatch } from "../store/store";
+import { AppDispatch, RootState } from "../store/store";
 
 const FilterSection: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
+  const userId = useSelector((state: RootState) => state.user.userInfo?.sub);
 
   useEffect(() => {
-    dispatch(fetchTasks());
-  }, [dispatch]);
+    if (userId) {
+      dispatch(fetchTasks(userId));
+    }
+  }, [dispatch, userId]);
 
   const handleFilterChange = (selectedItem: string) => {
     const convertedText =
@@ -23,17 +26,14 @@ const FilterSection: React.FC = () => {
   const menuItem: DropDownMenuItem[] = [
     {
       label: "ALL",
-      action: () => {},
       id: "all",
     },
     {
       label: "WORK",
-      action: () => {},
       id: "work",
     },
     {
       label: "PERSONAL",
-      action: () => {},
       id: "personal",
     },
   ];

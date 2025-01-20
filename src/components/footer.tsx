@@ -3,32 +3,91 @@ import { CloseIcon, MultiTickIcon } from "../icons";
 import MoreItems from "./common/drop-down-item";
 import Button from "./common/button";
 import { DropDownMenuItem } from "../types/task";
+import {
+  deleteTask,
+  selectFilteredTasks,
+  updateTask,
+} from "../store/task-slice";
+import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch, RootState } from "../store/store";
+import toast from "react-hot-toast";
 
-const Footer = () => {
+interface FooterProps {
+  selectedTaskIds: string[];
+  setSelectedTaskIds: React.Dispatch<React.SetStateAction<string[]>>;
+}
+
+const Footer: React.FC<FooterProps> = ({
+  selectedTaskIds,
+  setSelectedTaskIds,
+}) => {
+  const dispatch = useDispatch<AppDispatch>();
+  const userId = useSelector((state: RootState) => state.user.userInfo?.sub);
   const [taskStatus, setTaskStatus] = useState<string>("");
   const menuItem: DropDownMenuItem[] = [
     {
       label: "TODO",
-      action: () => setTaskStatus("TODO"),
+      action: () => {
+        handleUpdateSelectedTasksStatus("TODO");
+        setTaskStatus("TODO");
+      },
       id: "todo",
     },
     {
       label: "IN-PROGRESS",
-      action: () => setTaskStatus("IN-PROGRESS"),
+      action: () => {
+        handleUpdateSelectedTasksStatus("IN-PROGRESS");
+        setTaskStatus("IN-PROGRESS");
+      },
       id: "inProgress",
     },
     {
       label: "COMPLETED",
-      action: () => setTaskStatus("COMPLETED"),
+      action: () => {
+        handleUpdateSelectedTasksStatus("COMPLETED");
+        setTaskStatus("COMPLETED");
+      },
       id: "completed",
     },
   ];
+
+  const tasks = useSelector((state: RootState) =>
+    selectFilteredTasks(state.tasksList, userId)
+  );
+
+  const handleUpdateSelectedTasksStatus = (status: string) => {
+    if (selectedTaskIds.length === 0) {
+      toast.error("No tasks selected to update");
+      return;
+    }
+
+    selectedTaskIds.forEach((taskId: string) => {
+      const task = tasks.find((task) => task.id === taskId);
+      dispatch(
+        updateTask({
+          userId,
+          task: { ...task, status: status },
+        })
+      ).unwrap();
+    });
+    toast.success(`Task updated to ${status} successfully`);
+    setSelectedTaskIds([]);
+  };
+
+  const handleDeleteSelectedTasks = () => {
+    selectedTaskIds.forEach((taskId: string) => {
+      dispatch(deleteTask({ userId, taskId })).unwrap();
+    });
+    toast.success("Task deleted successfully");
+    setSelectedTaskIds([]);
+  };
+
   return (
     <div className="fixed bottom-5 left-1/2 transform -translate-x-1/2 flex justify-between gap-7 items-center rounded-xl w-max px-3 bg-black text-center py-4">
       <div className="flex gap-2 items-center">
         <div className="flex items-center space-x-2">
           <span className="text-white flex items-center gap-1 text-sm px-3 py-1 border border-white rounded-full">
-            2 Tasks Selected
+            {selectedTaskIds?.length} Tasks Selected
             <CloseIcon className="w-5 h-5 text-white" />
           </span>
         </div>
@@ -40,7 +99,11 @@ const Footer = () => {
             {taskStatus !== "" ? taskStatus : "Status"}
           </span>
         </MoreItems>
-        <Button children={"Delete"} type="danger" onClick={() => {}} />
+        <Button
+          children={"Delete"}
+          type="danger"
+          onClick={handleDeleteSelectedTasks}
+        />
       </div>
     </div>
   );

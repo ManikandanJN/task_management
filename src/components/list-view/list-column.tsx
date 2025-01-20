@@ -1,15 +1,19 @@
-import { useDroppable } from "@dnd-kit/core";
 import React from "react";
+import { useDroppable } from "@dnd-kit/core";
 import DraggableTask from "./list-item";
 import { Task, Column as ColumnType } from "../../types/task";
 
 interface DroppableColumnProps {
+  selectedTaskIds: string[];
+  setSelectedTaskIds: React.Dispatch<React.SetStateAction<string[]>>;
   showColumn: boolean;
   columns: ColumnType;
   tasks: Task;
 }
 
 const DroppableColumn: React.FC<DroppableColumnProps> = ({
+  selectedTaskIds,
+  setSelectedTaskIds,
   showColumn,
   column,
   tasks,
@@ -22,7 +26,12 @@ const DroppableColumn: React.FC<DroppableColumnProps> = ({
     <tbody ref={setNodeRef} className="bg-light-gray">
       {tasks.length > 0 ? (
         tasks.map((task: Task) => (
-          <DraggableTask showColumn={showColumn} task={task} />
+          <DraggableTask
+            showColumn={showColumn}
+            task={task}
+            selectedTaskIds={selectedTaskIds}
+            setSelectedTaskIds={setSelectedTaskIds}
+          />
         ))
       ) : (
         <tr>

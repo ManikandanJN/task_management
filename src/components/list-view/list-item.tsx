@@ -10,31 +10,47 @@ import {
   MoreIcon,
 } from "../../icons";
 import moment from "moment";
-import { deleteTask, fetchTasks, updateTask } from "../../store/task-slice";
+import {
+  deleteTask,
+  fetchTasks,
+  selectFilteredTasks,
+  updateTask,
+} from "../../store/task-slice";
 import toast from "react-hot-toast";
 import { DropDownMenuItem, FormValuesProps, Task } from "../../types/task";
 import { useDraggable } from "@dnd-kit/core";
-import { AppDispatch } from "../../store/store";
-import { useDispatch } from "react-redux";
+import { AppDispatch, RootState } from "../../store/store";
+import { useDispatch, useSelector } from "react-redux";
 
-const DraggableTask: React.FC = ({
-  showColumn,
-  task,
-}: {
+interface DraggableTaskProps {
   showColumn: boolean;
   task: Task;
+  selectedTaskIds: string[];
+  setSelectedTaskIds: React.Dispatch<React.SetStateAction<string[]>>;
+}
+
+const DraggableTask: React.FC<DraggableTaskProps> = ({
+  showColumn,
+  task,
+  selectedTaskIds,
+  setSelectedTaskIds,
 }) => {
   const dispatch = useDispatch<AppDispatch>();
+  const userId = useSelector((state: RootState) => state.user.userInfo?.sub);
+  const tasks = useSelector((state: RootState) =>
+    selectFilteredTasks(state.tasksList, userId)
+  );
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [selectedRow, setSelectedRow] = useState<Task>();
-  const [isChecked, setIsChecked] = useState<boolean>(false);
   const { attributes, listeners, setNodeRef, transform } = useDraggable({
     id: task.id,
   });
 
   useEffect(() => {
-    dispatch(fetchTasks());
-  }, [dispatch]);
+    if (userId) {
+      dispatch(fetchTasks(userId));
+    }
+  }, [dispatch, userId]);
 
   const style = transform
     ? {
@@ -42,25 +58,48 @@ const DraggableTask: React.FC = ({
       }
     : undefined;
 
+  const isChecked = selectedTaskIds?.includes(task.id!);
+
+  const handleCheckboxChange = () => {
+    setSelectedTaskIds(
+      (prev) =>
+        prev.includes(task.id!)
+          ? prev.filter((id) => id !== task.id!) // Remove from selection
+          : [...prev, task.id!] // Add to selection
+    );
+  };
+
+  const handleUpdateSelectedTasksStatus = (status: string, taskId: string) => {
+    const task = tasks.find((task) => task.id === taskId);
+    dispatch(
+      updateTask({
+        userId,
+        task: { ...task, status: status },
+      })
+    ).unwrap();
+    toast.success(`Task updated to ${status} successfully`);
+    setSelectedTaskIds([]);
+  };
+
   const getCategory: DropDownMenuItem[] = [
     {
       label: "TODO",
       action: (data: Task) => {
-        console.log("todo: ", data);
+        handleUpdateSelectedTasksStatus("TODO", data?.id);
       },
       id: "todo",
     },
     {
       label: "IN-PROGRESS",
       action: (data: Task) => {
-        console.log("progress: ", data);
+        handleUpdateSelectedTasksStatus("IN-PROGRESS", data?.id);
       },
       id: "inProgress",
     },
     {
       label: "COMPLETED",
       action: (data: Task) => {
-        console.log("completed: ", data);
+        handleUpdateSelectedTasksStatus("COMPLETED", data?.id);
       },
       id: "completed",
     },
@@ -80,7 +119,7 @@ const DraggableTask: React.FC = ({
       icon: <DeleteIcon className="h-4 w-4 text-red-600" />,
       label: "Delete",
       action: (data: Task) => {
-        dispatch(deleteTask(data?.id))
+        dispatch(deleteTask({ userId, taskId: data?.id }))
           .unwrap()
           .then(() => {
             toast.success("Task deleted successfully");
@@ -97,6 +136,8 @@ const DraggableTask: React.FC = ({
 
   const handleTaskUpdate = (formData: FormValuesProps) => {
     const payload = {
+      id: selectedRow.id,
+      userId: userId,
       title: formData.title ?? "",
       description: formData.description ?? "",
       status: formData.status ?? "",
@@ -104,7 +145,7 @@ const DraggableTask: React.FC = ({
       image: formData.image ?? "",
       date: formData.date ?? "",
     };
-    dispatch(updateTask({ id: selectedRow.id, ...payload }))
+    dispatch(updateTask({ userId, task: payload }))
       .unwrap()
       .then(() => {
         toast.success("Task updated successfully");
@@ -131,9 +172,12 @@ const DraggableTask: React.FC = ({
           <div className="flex gap-1 items-center">
             <input
               type="checkbox"
-              className="h-4 w-4"
+              className="checkbox h-4 w-4 appearance-none border-2 border-medium-gray rounded bg-white checked:bg-purple-600 focus:outline-none focus:ring-2 focus:ring-purple-300 relative"
               checked={isChecked}
-              onChange={() => setIsChecked(!isChecked)}
+              onPointerDown={(e: React.MouseEvent<HTMLButtonElement>) =>
+                e.stopPropagation()
+              }
+              onChange={handleCheckboxChange}
             />
             <DragIcon className="h-4 w-4 sm:block hidden" />
             <CircleWithTick
@@ -147,7 +191,9 @@ const DraggableTask: React.FC = ({
           </div>
         </td>
         <td className="px-4 py-2 text-xs md:text-sm hidden sm:table-cell border-b-2 border-medium-gray">
-          {moment(task.date).format("DD MMM, YYYY")}
+          {moment(task.date).isSame(moment(), "day")
+            ? "Today"
+            : moment(task.date).format("DD MMM, YYYY")}
         </td>
         <td className="px-4 py-2 text-xs hidden sm:table-cell border-b-2 border-medium-gray">
           <MoreItems task={task} actions={getCategory}>

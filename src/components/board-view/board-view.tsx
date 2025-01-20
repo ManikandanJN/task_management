@@ -18,13 +18,16 @@ interface BoardViewProps {
 
 const BoardView: React.FC<BoardViewProps> = ({ animate, setAnimate }) => {
   const dispatch = useDispatch<AppDispatch>();
+  const userId = useSelector((state: RootState) => state.user.userInfo?.sub);
   const tasks = useSelector((state: RootState) =>
-    selectFilteredTasks(state.tasksList)
+    selectFilteredTasks(state.tasksList, userId)
   );
 
   useEffect(() => {
-    dispatch(fetchTasks());
-  }, [dispatch]);
+    if (userId) {
+      dispatch(fetchTasks(userId));
+    }
+  }, [dispatch, userId]);
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
@@ -32,7 +35,8 @@ const BoardView: React.FC<BoardViewProps> = ({ animate, setAnimate }) => {
 
     const newStatus = over.id as Task["status"];
     const task = tasks.find((task) => task.id === active.id);
-    dispatch(updateTask({ ...task, status: newStatus }));
+    const updatedData = { ...task, status: newStatus };
+    dispatch(updateTask({ userId, task: updatedData }));
   };
 
   return (

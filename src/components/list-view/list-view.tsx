@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { DndContext } from "@dnd-kit/core";
+import { DndContext, DragEndEvent } from "@dnd-kit/core";
 import { useDispatch, useSelector } from "react-redux";
 import { getColor } from "../../utils/helpers";
 import { Task, Column as ColumnType } from "../../types/task";
@@ -16,12 +16,20 @@ import { DownArrow, SortIcon, UpArrow } from "../../icons";
 import AddTask from "./add-task";
 
 interface ListViewProps {
+  selectedTaskIds: string[]; // Array of selected task IDs
+  setSelectedTaskIds: React.Dispatch<React.SetStateAction<string[]>>;
   columns: ColumnType[];
   tasks: Task[];
   onDragEnd: (e: any) => void;
 }
 
-const ListView: React.FC<ListViewProps> = ({ tasks, columns, onDragEnd }) => {
+const ListView: React.FC<ListViewProps> = ({
+  selectedTaskIds,
+  setSelectedTaskIds,
+  tasks,
+  columns,
+  onDragEnd,
+}) => {
   const dispatch = useDispatch<AppDispatch>();
   const [sortingOrder, setSortingOrder] = useState<boolean>(true);
   const [showListColumn, setShowListColumn] = useState<boolean>(true);
@@ -94,6 +102,8 @@ const ListView: React.FC<ListViewProps> = ({ tasks, columns, onDragEnd }) => {
               {column.title === "To Do" && <AddTask />}
             </tbody>
             <DroppableColumn
+              selectedTaskIds={selectedTaskIds}
+              setSelectedTaskIds={setSelectedTaskIds}
               showColumn={showListColumn}
               column={column}
               tasks={tasks.filter((task: Task) => task.status === column.id)}
@@ -106,15 +116,24 @@ const ListView: React.FC<ListViewProps> = ({ tasks, columns, onDragEnd }) => {
   );
 };
 
-const ListViewComp: React.FC = () => {
+const ListViewComp: React.FC = ({
+  selectedTaskIds,
+  setSelectedTaskIds,
+}: {
+  selectedTaskIds: string[]; // Array of selected task IDs
+  setSelectedTaskIds: React.Dispatch<React.SetStateAction<string[]>>;
+}) => {
   const dispatch = useDispatch<AppDispatch>();
+  const userId = useSelector((state: RootState) => state.user.userInfo?.sub);
   const tasks = useSelector((state: RootState) =>
-    selectFilteredTasks(state.tasksList)
+    selectFilteredTasks(state.tasksList, userId)
   );
 
   useEffect(() => {
-    dispatch(fetchTasks());
-  }, [dispatch]);
+    if (userId) {
+      dispatch(fetchTasks(userId));
+    }
+  }, [dispatch, userId]);
 
   const handleDragEnd = (event) => {
     const { active, over } = event;
@@ -122,10 +141,19 @@ const ListViewComp: React.FC = () => {
     if (!over) return;
     const newStatus = over.id;
     const task = tasks.find((task) => task.id === active.id);
-    dispatch(updateTask({ ...task, status: newStatus }));
+    const updatedData = { ...task, status: newStatus };
+    dispatch(updateTask({ userId, task: updatedData }));
   };
 
-  return <ListView tasks={tasks} columns={COLUMNS} onDragEnd={handleDragEnd} />;
+  return (
+    <ListView
+      selectedTaskIds={selectedTaskIds}
+      setSelectedTaskIds={setSelectedTaskIds}
+      tasks={tasks}
+      columns={COLUMNS}
+      onDragEnd={handleDragEnd}
+    />
+  );
 };
 
 export default ListViewComp;

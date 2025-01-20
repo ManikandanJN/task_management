@@ -1,5 +1,5 @@
 import React, { useState, ChangeEvent } from "react";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import toast from "react-hot-toast";
 import CustomDatePicker from "../common/custom-date-picker";
 import DropDown from "../common/drop-down";
@@ -7,10 +7,11 @@ import Button from "../common/button";
 import { EnterIcon } from "../../icons";
 import { DropDownMenuItem, FormValuesProps } from "../../types/task";
 import { addTask } from "../../store/task-slice";
-import { AppDispatch } from "../../store/store";
+import { AppDispatch, RootState } from "../../store/store";
 
 const AddTask = () => {
   const dispatch = useDispatch<AppDispatch>();
+  const userId = useSelector((state: RootState) => state.user.userInfo?.sub);
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [formValues, setFormValues] = useState<FormValuesProps>({
     title: "",
@@ -64,6 +65,7 @@ const AddTask = () => {
 
   const createTask = () => {
     const payload = {
+      userId: userId,
       title: formValues.title,
       description: "",
       status: formValues.status,
@@ -71,7 +73,7 @@ const AddTask = () => {
       image: "",
       date: formValues.date,
     };
-    dispatch(addTask(payload))
+    dispatch(addTask({ userId, task: payload }))
       .unwrap()
       .then(() => {
         toast.success("Task created successfully");

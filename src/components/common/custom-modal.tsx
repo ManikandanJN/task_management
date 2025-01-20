@@ -50,7 +50,7 @@ const CustomModal: React.FC<CustomModelProps> = ({
         <div className="fixed left-0 top-0 z-50 flex h-full w-full flex-col items-center justify-center bg-black bg-opacity-70">
           <div
             ref={modalRef}
-            className={`relative max-w-full h-[90%] overflow-y-auto rounded-2xl bg-white ${
+            className={`relative max-w-full overflow-y-auto rounded-2xl bg-white ${
               customStyleForContent ? customStyleForContent : "w-96"
             }`}
           >

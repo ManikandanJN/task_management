@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useDraggable } from "@dnd-kit/core";
 import toast from "react-hot-toast";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import moment from "moment";
 import { DropDownMenuItem, FormValuesProps, Task } from "../../types/task";
 import MoreItems from "../common/drop-down-item";
@@ -9,7 +9,7 @@ import { DeleteIcon, EditIcon, MoreIcon } from "../../icons";
 import CustomModal from "../common/custom-modal";
 import TaskCreation from "../task-creation";
 import { deleteTask, fetchTasks, updateTask } from "../../store/task-slice";
-import { AppDispatch } from "../../store/store";
+import { AppDispatch, RootState } from "../../store/store";
 
 type TaskCardProps = {
   task: Task;
@@ -22,6 +22,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
   const { attributes, listeners, setNodeRef, transform } = useDraggable({
     id: task.id,
   });
+  const userId = useSelector((state: RootState) => state.user.userInfo?.sub);
 
   const style = useMemo(
     () =>
@@ -34,8 +35,10 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
   );
 
   useEffect(() => {
-    dispatch(fetchTasks());
-  }, [dispatch]);
+    if (userId) {
+      dispatch(fetchTasks(userId));
+    }
+  }, [dispatch, userId]);
 
   const getMoreItems: DropDownMenuItem[] = [
     {
@@ -51,7 +54,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
       icon: <DeleteIcon className="h-4 w-4 text-red-600" />,
       label: "Delete",
       action: (data: Task) => {
-        dispatch(deleteTask(data?.id))
+        dispatch(deleteTask({ userId, taskId: data?.id }))
           .unwrap()
           .then(() => {
             toast.success("Task deleted successfully");
@@ -68,6 +71,8 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
 
   const handleTaskUpdate = (formData: FormValuesProps) => {
     const payload = {
+      id: selectedRow.id,
+      userId: userId,
       title: formData.title ?? "",
       description: formData.description ?? "",
       status: formData.status ?? "",
@@ -75,7 +80,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
       image: formData.image ?? "",
       date: formData.date ?? "",
     };
-    dispatch(updateTask({ id: selectedRow.id, ...payload }))
+    dispatch(updateTask({ userId, task: payload }))
       .unwrap()
       .then(() => {
         toast.success("Task updated successfully");
@@ -111,7 +116,9 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
         <div className="flex justify-between text-opacity-gray">
           <p className="mt-2 text-[12px]">{task.category}</p>
           <p className="mt-2 text-[12px]">
-            {moment(task.date).format("DD MMM, YYYY")}
+            {moment(task.date).isSame(moment(), "day")
+              ? "Today"
+              : moment(task.date).format("DD MMM, YYYY")}
           </p>
         </div>
       </div>

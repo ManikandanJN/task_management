@@ -7,7 +7,6 @@ import {
   update,
   remove,
   get,
-  child,
 } from "firebase/database";
 import db from "../firebase/firebase-config";
 
@@ -19,6 +18,7 @@ interface Task {
   date: string;
   category: string;
   status: string;
+  userId?: string;
 }
 
 interface FirebaseState {
@@ -42,10 +42,10 @@ const initialFirebaseState: FirebaseState = {
 // Fetch tasks
 export const fetchTasks = createAsyncThunk(
   "firebase/fetchTasks",
-  async (_, { rejectWithValue }) => {
+  async (userId: string, { rejectWithValue }) => {
     try {
-      const dbRef = ref(getDatabase(db));
-      const snapshot = await get(child(dbRef, "taskManagement/tasks"));
+      const dbRef = ref(getDatabase(db), `taskManagement/tasks/${userId}`);
+      const snapshot = await get(dbRef);
 
       if (snapshot.exists()) {
         const data = snapshot.val();
@@ -66,9 +66,12 @@ export const fetchTasks = createAsyncThunk(
 // Add task
 export const addTask = createAsyncThunk(
   "firebase/addTask",
-  async (task: Omit<Task, "id">, { rejectWithValue }) => {
+  async (
+    { userId, task }: { userId: string; task: Task },
+    { rejectWithValue }
+  ) => {
     try {
-      const dbRef = ref(getDatabase(db), "taskManagement/tasks");
+      const dbRef = ref(getDatabase(db), `taskManagement/tasks/${userId}`);
       const newTaskRef = push(dbRef);
       await set(newTaskRef, task);
       return { id: newTaskRef.key, ...task };
@@ -81,11 +84,17 @@ export const addTask = createAsyncThunk(
 // Update task
 export const updateTask = createAsyncThunk(
   "firebase/updateTask",
-  async ({ id, ...task }: Task, { rejectWithValue }) => {
+  async (
+    { userId, task }: { userId: string; task: Task },
+    { rejectWithValue }
+  ) => {
     try {
-      const dbRef = ref(getDatabase(db), `taskManagement/tasks/${id}`);
+      const dbRef = ref(
+        getDatabase(db),
+        `taskManagement/tasks/${userId}/${task.id}`
+      );
       await update(dbRef, task);
-      return { id, ...task };
+      return task;
     } catch (error: any) {
       return rejectWithValue(error.message);
     }
@@ -95,11 +104,17 @@ export const updateTask = createAsyncThunk(
 // Delete task
 export const deleteTask = createAsyncThunk(
   "firebase/deleteTask",
-  async (id: string, { rejectWithValue }) => {
+  async (
+    { userId, taskId }: { userId: string; taskId: string },
+    { rejectWithValue }
+  ) => {
     try {
-      const dbRef = ref(getDatabase(db), `taskManagement/tasks/${id}`);
+      const dbRef = ref(
+        getDatabase(db),
+        `taskManagement/tasks/${userId}/${taskId}`
+      );
       await remove(dbRef);
-      return id;
+      return taskId;
     } catch (error: any) {
       return rejectWithValue(error.message);
     }
@@ -184,10 +199,11 @@ const taskSlice = createSlice({
 
 export const { setFilter, setSearchQuery, setSortOrder } = taskSlice.actions;
 
-export const selectFilteredTasks = (state: FirebaseState) => {
+export const selectFilteredTasks = (state: FirebaseState, userId: string) => {
   const { tasks, filter, searchQuery, sortOrder } = state;
 
   return tasks
+    .filter((task) => task.userId === userId) // Only include tasks for the logged-in user
     .filter((task) => (filter === "All" ? true : task.category === filter)) // Category filter
     .filter(
       (task) => task.title.toLowerCase().includes(searchQuery.toLowerCase()) // Search filter
