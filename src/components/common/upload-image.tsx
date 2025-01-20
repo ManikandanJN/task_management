@@ -35,7 +35,7 @@ const UploadImage: React.FC<UploadImageProps> = ({
             htmlFor="file-upload"
             className="text-blue-500 underline cursor-pointer"
           >
-            Update
+            Upload
           </label>
         </span>
         <input
