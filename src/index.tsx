@@ -9,7 +9,7 @@ import { persistor, store } from "./store/store";
 import { PersistGate } from "redux-persist/integration/react";
 
 const clientId =
-  "154664530727-o94hgi28in9pa3lqjkh916tmo6ujc02s.apps.googleusercontent.com";
+  "633981511392-7dk6nfahbqolab2n8jra89fdkgpa933b.apps.googleusercontent.com";
 
 const root = ReactDOM.createRoot(
   document.getElementById("root") as HTMLElement
