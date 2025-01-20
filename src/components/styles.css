@@ -1,0 +1,19 @@
+.ql-container-custom .ql-toolbar {
+  @apply absolute left-0 border-none z-10 rounded-lg w-[190px];
+}
+
+.ql-container-custom .ql-container {
+  @apply flex flex-wrap bg-light-gray border-gray-400 rounded-lg h-[130px] sm:h-[175px];
+}
+
+.ql-toolbar {
+  @apply absolute z-10 w-[190px] mt-[90px] sm:mt-[130px];
+}
+
+.ql-container {
+  @apply flex flex-wrap pb-20 h-[130px] sm:h-[175px];
+}
+
+.ql-editor {
+  @apply w-full;
+}

@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "jsx": "react",
+    "module": "esnext",
+    "moduleResolution": "node",
+    "target": "es5",
+    "esModuleInterop": true
+  },
+  "exclude": [
+    "node_modules",
+    "tailwind.config.js" // Exclude this file
+  ]
+}
